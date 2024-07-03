@@ -10,15 +10,15 @@ from .validator import Validator
 
 
 class HttpBinSpider(Validator):
-    name = 'httpbin'
+    name = "httpbin"
     concurrent_requests = 16
 
     def __init__(self, name=None, **kwargs):
         super(HttpBinSpider, self).__init__(name, **kwargs)
         self.timeout = 20
         self.urls = [
-            'http://httpbin.org/get?show_env=1',
-            'https://httpbin.org/get?show_env=1',
+            "http://httpbin.org/get?show_env=1",
+            "https://httpbin.org/get?show_env=1",
         ]
         self.headers = {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -26,10 +26,10 @@ class HttpBinSpider(Validator):
             "Accept-Language": "en-US,en;q=0.5",
             "Host": "httpbin.org",
             "Upgrade-Insecure-Requests": "1",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:51.0) Gecko/20100101 Firefox/51.0"
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.11; rv:51.0) Gecko/20100101 Firefox/51.0",
         }
 
-        self.origin_ip = ''
+        self.origin_ip = ""
 
         self.init()
 
@@ -57,45 +57,45 @@ class HttpBinSpider(Validator):
                 continue
 
             for url in self.urls:
-                https = 'yes' if 'https' in url else 'no'
+                https = "yes" if "https" in url else "no"
 
                 yield Request(
                     url=url,
                     headers=self.headers,
                     dont_filter=True,
-                    priority=0 if https == 'yes' else 10,
+                    priority=0 if https == "yes" else 10,
                     meta={
-                        'cur_time': time.time(),
-                        'download_timeout': self.timeout,
-                        'proxy_info': proxy,
-                        'table': table,
-                        'https': https,
-                        'proxy': 'http://%s:%s' % (proxy.ip, proxy.port),
-                        'vali_count': proxy.vali_count,
+                        "cur_time": time.time(),
+                        "download_timeout": self.timeout,
+                        "proxy_info": proxy,
+                        "table": table,
+                        "https": https,
+                        "proxy": "http://%s:%s" % (proxy.ip, proxy.port),
+                        "vali_count": proxy.vali_count,
                     },
                     callback=self.success_parse,
                     errback=self.error_parse,
                 )
 
     def success_parse(self, response):
-        proxy = response.meta.get('proxy_info')
-        table = response.meta.get('table')
-        proxy.https = response.meta.get('https')
+        proxy = response.meta.get("proxy_info")
+        table = response.meta.get("table")
+        proxy.https = response.meta.get("https")
 
         self.save_page(proxy.ip, response.body)
 
         if self.success_content_parse(response):
-            proxy.speed = time.time() - response.meta.get('cur_time')
+            proxy.speed = time.time() - response.meta.get("cur_time")
             proxy.vali_count += 1
             self.log('proxy_info:%s' % (str(proxy)))
 
-            if proxy.https == 'no':
+            if proxy.https == "no":
                 data = json.loads(response.body)
-                origin = data.get('origin')
-                headers = data.get('headers')
-                x_forwarded_for = headers.get('X-Forwarded-For', None)
-                x_real_ip = headers.get('X-Real-Ip', None)
-                via = headers.get('Via', None)
+                origin = data.get("origin")
+                headers = data.get("headers")
+                x_forwarded_for = headers.get("X-Forwarded-For", None)
+                x_real_ip = headers.get("X-Real-Ip", None)
+                via = headers.get("Via", None)
 
                 if self.origin_ip in origin:
                     proxy.anonymity = 3
@@ -119,11 +119,11 @@ class HttpBinSpider(Validator):
 
     def error_parse(self, failure):
         request = failure.request
-        self.log('error_parse value:%s url:%s meta:%s' % (failure.value, request.url, request.meta))
-        https = request.meta.get('https')
-        if https == 'no':
-            table = request.meta.get('table')
-            proxy = request.meta.get('proxy_info')
+        self.log("error_parse value:%s url:%s meta:%s" % (failure.value, request.url, request.meta))
+        https = request.meta.get("https")
+        if https == "no":
+            table = request.meta.get("table")
+            proxy = request.meta.get("proxy_info")
 
             if table == self.name:
                 self.sql.del_proxy_with_id(table_name=table, id=proxy.id)
