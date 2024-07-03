@@ -1,0 +1,57 @@
+# version: '3.8'
+services:
+  app:
+    # platform: linux/amd64
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    image: ipproxy:3.6-slim
+    env_file:
+      - .env
+    volumes:
+      - .:/home
+      - ${HOME}/.vscode/extensions:/root/.vscode-server/extensions
+    ports:
+      - "8000:8000"
+    network_mode: host
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:latest
+    restart: always
+    env_file:
+      - .env
+    # environment:
+    #   MYSQL_ROOT_PASSWORD: 123456
+    #   # MYSQL_DATABASE: your_database_name
+    #   # MYSQL_USER: your_username
+    #   # MYSQL_PASSWORD: your_password
+    volumes:
+      - ./db.sql:/docker-entrypoint-initdb.d/db.sql
+      - ./data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      # test:
+      #   [
+      #     "CMD",
+      #     "mysqladmin",
+      #     "ping",
+      #     "-u",
+      #     "root",
+      #     "-p${MYSQL_ROOT_PASSWORD}"
+      #   ]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+    # db_import:
+    #   build:
+    #     context: .
+    #     dockerfile: Dockerfile
+    #   depends_on:
+    #     - db
+    #   command: bash -c 'mysql -h mysql -u root -p"123456" free_ipproxy < /docker-entrypoint-initdb.d/db.sql'
